@@ -5,8 +5,9 @@ import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-# Railway se Token uthayen, agar wahan na mile toh fallback token use karein
+# Railway ke Variables se token uthayega, agar nahi mila toh yeh use karega
 TOKEN = os.environ.get('TELEGRAM_TOKEN', '9204078607:AAEp6xe3UmwMZcCNH0S9MzmPmhtV0KtTYhg')
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.text:
         return
@@ -26,7 +27,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔍 Fetching Data... ⏳")
 
     try:
-        response = requests.get(api_url)
+        # API ko block hone se bachane ke liye Browser Headers
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+        }
+        
+        response = requests.get(api_url, headers=headers, timeout=15)
         
         if response.status_code != 200:
             await update.message.reply_text(f"⚠️ API Server Error: Status {response.status_code}")
@@ -39,12 +46,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             sim_data = result.get('sim_data') or result.get('data') or []
 
             if not sim_data:
-                await update.message.reply_text("❌ No records found in API response.")
+                # Agar API ne data nahi diya, toh asli jawab dikhayein
+                await update.message.reply_text(f"❌ No records found. API Details: {str(data)[:200]}")
                 return
 
             truecaller_data = result.get('truecaller_data', [])
             
-            final_message = "🛡️ **𝐕ᴏɪᴅ𝐗 𝐒𝐢𝐦 𝐃𝐚𝐭𝐚𝐛𝐚𝐬𝐞**\n"
+            final_message = "🛡️ **𝐕ᴏɪᴅ𝐗 𝐒𝐢ᴍ 𝐃𝐚𝐭𝐚𝐛𝐚𝐬𝐞**\n"
             final_message += "━━━━━━━━━━━━━━━━━━━━\n\n"
             
             for idx, rec in enumerate(sim_data):
